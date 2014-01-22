@@ -13,12 +13,34 @@ imp.load_source('Leap', 'lib/Leap.py')
 
 import Leap, sys
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
+import time
 
-import objc
-def setMousePosition(x, y):
-    bndl = objc.loadBundle('CoreGraphics', globals(), '/System/Library/Frameworks/ApplicationServices.framework')
-    objc.loadBundleFunctions(bndl, globals(), [('CGWarpMouseCursorPosition', 'v{CGPoint=ff}')])
-    CGWarpMouseCursorPosition((x, y))
+from Quartz.CoreGraphics import CGEventCreateMouseEvent
+from Quartz.CoreGraphics import CGEventPost
+from Quartz.CoreGraphics import kCGEventMouseMoved
+from Quartz.CoreGraphics import kCGEventLeftMouseDown
+from Quartz.CoreGraphics import kCGEventLeftMouseDown
+from Quartz.CoreGraphics import kCGEventLeftMouseUp
+from Quartz.CoreGraphics import kCGMouseButtonLeft
+from Quartz.CoreGraphics import kCGHIDEventTap
+from AppKit import NSScreen
+
+#width=1440.0, height=900.0
+
+def mouseEvent(type, posx, posy):
+        theEvent = CGEventCreateMouseEvent(None,type,(posx,posy),kCGMouseButtonLeft)
+        CGEventPost(kCGHIDEventTap, theEvent)
+
+def mousemove(posx,posy):
+        mouseEvent(kCGEventMouseMoved,posx,posy);
+
+def mouseclick(posx,posy):
+        # uncomment this line if you want to force the mouse 
+        # to MOVE to the click location first (I found it was not necessary).
+        #mouseEvent(kCGEventMouseMoved, posx,posy);
+        mouseEvent(kCGEventLeftMouseDown, posx,posy);
+        mouseEvent(kCGEventLeftMouseUp, posx,posy);
+
 
 
 class SampleListener(Leap.Listener):
@@ -62,6 +84,9 @@ class SampleListener(Leap.Listener):
                 avg_pos /= len(fingers)
                 print "Hand has %d fingers, average finger tip position: x=%.2f, y=%.2f z=%.2f" % ( len(fingers), avg_pos[0],avg_pos[1],avg_pos[2] )
                 x,y,z = avg_pos[0],avg_pos[1],avg_pos[2]
+
+
+
 
 
             # Get the hand's sphere radius and palm position
@@ -133,19 +158,31 @@ class SampleListener(Leap.Listener):
             return "STATE_INVALID"
 
 def main():
-    # Create a sample listener and controller
-    listener = SampleListener()
-    controller = Leap.Controller()
+    # # Create a sample listener and controller
+    # listener = SampleListener()
+    # controller = Leap.Controller()
 
-    # Have the sample listener receive events from the controller
-    controller.add_listener(listener)
+    # # Have the sample listener receive events from the controller
+    # controller.add_listener(listener)
 
-    # Keep this process running until Enter is pressed
-    print "Press Enter to quit..."
-    sys.stdin.readline()
+    # # Keep this process running until Enter is pressed
+    # print "Press Enter to quit..."
+    # sys.stdin.readline()
 
-    # Remove the sample listener when done
-    controller.remove_listener(listener)
+    # # Remove the sample listener when done
+    # controller.remove_listener(listener)
+
+    width = NSScreen.mainScreen().frame().size.width
+    height = NSScreen.mainScreen().frame().size.height
+    center = [width,height]
+    print width, height
+    
+    x = -150.0
+    y = 0.0
+
+
+    # center = [width/2,height/2]
+    # print center
 
 
 if __name__ == "__main__":
