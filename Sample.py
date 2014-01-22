@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import imp
-imp.load_source('Leap', 'Leap.py')
+imp.load_source('Leap', 'lib/Leap.py')
 
 ################################################################################
 # Copyright (C) 2012-2013 Leap Motion, Inc. All rights reserved.               #
@@ -13,6 +13,12 @@ imp.load_source('Leap', 'Leap.py')
 
 import Leap, sys
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
+
+import objc
+def setMousePosition(x, y):
+    bndl = objc.loadBundle('CoreGraphics', globals(), '/System/Library/Frameworks/ApplicationServices.framework')
+    objc.loadBundleFunctions(bndl, globals(), [('CGWarpMouseCursorPosition', 'v{CGPoint=ff}')])
+    CGWarpMouseCursorPosition((x, y))
 
 
 class SampleListener(Leap.Listener):
@@ -54,12 +60,12 @@ class SampleListener(Leap.Listener):
                 for finger in fingers:
                     avg_pos += finger.tip_position
                 avg_pos /= len(fingers)
-                print "Hand has %d fingers, average finger tip position: %s" % (
-                      len(fingers), avg_pos)
+                print "Hand has %d fingers, average finger tip position: x=%.2f, y=%.2f z=%.2f" % ( len(fingers), avg_pos[0],avg_pos[1],avg_pos[2] )
+                x,y,z = avg_pos[0],avg_pos[1],avg_pos[2]
+
 
             # Get the hand's sphere radius and palm position
-            print "Hand sphere radius: %f mm, palm position: %s" % (
-                  hand.sphere_radius, hand.palm_position)
+            print "Hand sphere radius: %f mm, palm position: %s" % (hand.sphere_radius, hand.palm_position)
 
             # Get the hand's normal vector and direction
             normal = hand.palm_normal
