@@ -27,6 +27,19 @@ from AppKit import NSScreen
 
 #width=1440.0, height=900.0
 
+UP = ('UP',(0, 1))
+UPRIGHT = ('UPRIGHT',(1, 1))
+RIGHT = ('RIGHT',(1, 0))
+DOWNRIGHT = ('DOWNRIGHT',(1, -1))
+DOWN = ('DOWN',(0, -1))
+DOWNLEFT = ('DOWNLEFT',(-1, -1))
+LEFT = ('LEFT',(-1, 0))
+UPLEFT = ('UPLEFT',(-1, 1))
+CENTER = ('CENTER',(0,0))
+
+SPEED = 1
+ZERO_THRESHOLD = 20.0
+
 def mouseEvent(type, posx, posy):
         theEvent = CGEventCreateMouseEvent(None,type,(posx,posy),kCGMouseButtonLeft)
         CGEventPost(kCGHIDEventTap, theEvent)
@@ -40,6 +53,39 @@ def mouseclick(posx,posy):
         #mouseEvent(kCGEventMouseMoved, posx,posy);
         mouseEvent(kCGEventLeftMouseDown, posx,posy);
         mouseEvent(kCGEventLeftMouseUp, posx,posy);
+
+def get_state(coord):
+    x,y,z = coord
+    print "x=%.2f, y=%.2f z=%.2f" % (x,y,z)
+    
+    if abs(x) < ZERO_THRESHOLD:
+        x = 0
+    elif x < 0:
+        x = -1
+    elif x > 0:
+        x = 1
+    
+    if abs(y) < ZERO_THRESHOLD:
+        y = 0
+    elif y < 0:
+        y = -1
+    elif y > 0:
+        y = 1
+
+    state = None
+    condition = (x,y)
+    print "Condition %s" % str(condition)
+    if condition == UP:
+        state = UP
+    elif condition == DOWN:
+        state = DOWN
+
+    print "State %s" % str(state)
+
+
+
+
+
 
 
 
@@ -83,7 +129,9 @@ class SampleListener(Leap.Listener):
                     avg_pos += finger.tip_position
                 avg_pos /= len(fingers)
                 print "Hand has %d fingers, average finger tip position: x=%.2f, y=%.2f z=%.2f" % ( len(fingers), avg_pos[0],avg_pos[1],avg_pos[2] )
-                x,y,z = avg_pos[0],avg_pos[1],avg_pos[2]
+                print get_state((avg_pos[0],avg_pos[1],avg_pos[2]))
+
+
 
 
 
@@ -179,6 +227,9 @@ def main():
     
     x = -150.0
     y = 0.0
+
+    get_state((0,0,0))
+    get_state((0,25,0))
 
 
     # center = [width/2,height/2]
