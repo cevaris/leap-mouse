@@ -49,39 +49,31 @@ LEFT =      State('LEFT',(-1, 0))
 UPLEFT =    State('UPLEFT',(-1, 1))
 CENTER =    State('CENTER',(0,0))
 
-SPEED = 1
+SPEED = 5
 ZERO_THRESHOLD = 50.0
+MOUSE = PyMouse()
+
+LEFT_CLICK   = 1
+MIDDLE_CLICK = 2
+RIGHT_CLICK  = 3
 
 
 def mousemove(deltax,deltay):
-    mouse = PyMouse()
-    x,y = mouse.position()
-    # print "Current %s new %s" % (m.position(), str((deltax+x,deltay+y)) )
-    # print "Delta(%s, %s)" % (deltax, deltay)
-    w,h = mouse.screen_size()
-    print str((deltax+x,deltay+y))
-    mouse.move(deltax+x,deltay+y)
+    x,y = MOUSE.position()
+    w,h = MOUSE.screen_size()
 
-    # mouseEvent(kCGEventMouseMoved,deltax+x,deltay+y);
-
-
-# def mouseEvent(type, posx, posy):
-#     theEvent = CGEventCreateMouseEvent(None,type,(posx,posy),kCGMouseButtonLeft)
-#     CGEventPost(kCGHIDEventTap, theEvent)
-
-# def mousemove(deltax,deltay):
+    nextx, nexty = deltax+x, deltay+y
     
-#     x,y = m.position()
-#     # print "Current %s new %s" % (m.position(), str((deltax+x,deltay+y)) )
-#     print "Delta(%s, %s)" % (deltax, deltay)
-#     mouseEvent(kCGEventMouseMoved,deltax+x,deltay+y);
+    if nextx < 0: nextx = 0
+    if nextx > w: nextx = w
+    if nexty < 0: nexty = 0
+    if nexty > h: nexty = h
 
-# def mouseclick(posx,posy):
-#     # uncomment this line if you want to force the mouse 
-#     # to MOVE to the click location first (I found it was not necessary).
-#     #mouseEvent(kCGEventMouseMoved, posx,posy);
-#     mouseEvent(kCGEventLeftMouseDown, posx,posy);
-#     mouseEvent(kCGEventLeftMouseUp, posx,posy);
+    MOUSE.move(nextx,nexty)
+
+def mouse_click(type):
+    x,y = MOUSE.position()
+    MOUSE.click(x,y,type)
 
 def render(state):
     if    state.eq(UP): mousemove(0,-SPEED)
@@ -97,18 +89,18 @@ def render(state):
 
 def calc_state(x, y, z):
     
-    if abs(x) < ZERO_THRESHOLD:
+    if abs(x) < 20:
         x = 0
     elif x < 0:
         x = -1
     elif x > 0:
         x = 1
     
-    if 100 < y and y < 120:
+    if 120 < y and y < 140:
         y = 0
-    elif y < 100:
+    elif y < 120:
         y = -1
-    elif y > 120:
+    elif y > 140:
         y = 1
 
     now = State(None,(x,y))  
@@ -221,12 +213,14 @@ class SampleListener(Leap.Listener):
                     print "Key Tap id: %d, %s, position: %s, direction: %s" % (
                             gesture.id, self.state_string(gesture.state),
                             keytap.position, keytap.direction )
+                    mouse_click(LEFT_CLICK)
 
                 if gesture.type == Leap.Gesture.TYPE_SCREEN_TAP:
                     screentap = ScreenTapGesture(gesture)
                     print "Screen Tap id: %d, %s, position: %s, direction: %s" % (
                             gesture.id, self.state_string(gesture.state),
                             screentap.position, screentap.direction )
+                    mouse_click(LEFT_CLICK)
 
         if not (frame.hands.is_empty and frame.gestures().is_empty):
             print ""
@@ -249,8 +243,12 @@ def main():
     listener = SampleListener()
     controller = Leap.Controller()
 
+    # Allow capture of frames when app not in focus
+    controller.set_policy_flags(Leap.Controller.POLICY_BACKGROUND_FRAMES);
+
     # Have the sample listener receive events from the controller
     controller.add_listener(listener)
+
 
     # Keep this process running until Enter is pressed
     print "Press Enter to quit..."
@@ -258,6 +256,7 @@ def main():
 
     # Remove the sample listener when done
     controller.remove_listener(listener)
+
 
     # width = NSScreen.mainScreen().frame().size.width
     # height = NSScreen.mainScreen().frame().size.height
