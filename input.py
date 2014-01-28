@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import imp
+from pymouse import PyMouse
 imp.load_source('Leap', 'lib/Leap.py')
 
 ################################################################################
@@ -27,36 +28,59 @@ from AppKit import NSScreen
 
 #width=1440.0, height=900.0
 
-UP = ('UP',(0, 1))
-UPRIGHT = ('UPRIGHT',(1, 1))
-RIGHT = ('RIGHT',(1, 0))
-DOWNRIGHT = ('DOWNRIGHT',(1, -1))
-DOWN = ('DOWN',(0, -1))
-DOWNLEFT = ('DOWNLEFT',(-1, -1))
-LEFT = ('LEFT',(-1, 0))
-UPLEFT = ('UPLEFT',(-1, 1))
-CENTER = ('CENTER',(0,0))
+class State:
+    def __init__(self,name, state):
+        self.name = name
+        self.state = state
+    def eq(self, state2):
+        # print "%s %s" % (str(self.state), str(state2.state))
+        return self.state == state2.state
+    def __str__(self):
+        return "%s %s" % (self.name or 'None', str(self.state))
+    
 
-SPEED = 1
-ZERO_THRESHOLD = 20.0
+UP =        State('UP',(0, 1))
+UPRIGHT =   State('UPRIGHT',(1, 1))
+RIGHT =     State('RIGHT',(1, 0))
+DOWNRIGHT = State('DOWNRIGHT',(1, -1))
+DOWN =      State('DOWN',(0, -1))
+DOWNLEFT =  State('DOWNLEFT',(-1, -1))
+LEFT =      State('LEFT',(-1, 0))
+UPLEFT =    State('UPLEFT',(-1, 1))
+CENTER =    State('CENTER',(0,0))
+
+SPEED = 10
+ZERO_THRESHOLD = 50.0
 
 def mouseEvent(type, posx, posy):
-        theEvent = CGEventCreateMouseEvent(None,type,(posx,posy),kCGMouseButtonLeft)
-        CGEventPost(kCGHIDEventTap, theEvent)
+    theEvent = CGEventCreateMouseEvent(None,type,(posx,posy),kCGMouseButtonLeft)
+    CGEventPost(kCGHIDEventTap, theEvent)
 
 def mousemove(posx,posy):
-        mouseEvent(kCGEventMouseMoved,posx,posy);
+    m = PyMouse()
+    x,y = m.position()
+    mouseEvent(kCGEventMouseMoved,posx+x,posy+y);
 
 def mouseclick(posx,posy):
-        # uncomment this line if you want to force the mouse 
-        # to MOVE to the click location first (I found it was not necessary).
-        #mouseEvent(kCGEventMouseMoved, posx,posy);
-        mouseEvent(kCGEventLeftMouseDown, posx,posy);
-        mouseEvent(kCGEventLeftMouseUp, posx,posy);
+    # uncomment this line if you want to force the mouse 
+    # to MOVE to the click location first (I found it was not necessary).
+    #mouseEvent(kCGEventMouseMoved, posx,posy);
+    mouseEvent(kCGEventLeftMouseDown, posx,posy);
+    mouseEvent(kCGEventLeftMouseUp, posx,posy);
 
-def get_state(coord):
-    x,y,z = coord
-    print "x=%.2f, y=%.2f z=%.2f" % (x,y,z)
+def render(state):
+    if    now.eq(UP): mousemove(ZERO_THRESHOLD,0)
+    elif  now.eq(UPRIGHT): state = UPRIGHT
+    elif  now.eq(RIGHT): state = RIGHT
+    elif  now.eq(DOWNRIGHT): state = DOWNRIGHT
+    elif  now.eq(DOWN): state = DOWN
+    elif  now.eq(DOWNLEFT): state = DOWNLEFT
+    elif  now.eq(LEFT): mousemove(-ZERO_THRESHOLD,0)
+    elif  now.eq(UPLEFT): mousemove(-ZERO_THRESHOLD,ZERO_THRESHOLD)
+    else: state = mousemove(0,0)
+
+
+def calc_state(x, y, z):
     
     if abs(x) < ZERO_THRESHOLD:
         x = 0
@@ -72,21 +96,21 @@ def get_state(coord):
     elif y > 0:
         y = 1
 
+    now = State(None,(x,y))  
     state = None
-    condition = (x,y)
-    print "Condition %s" % str(condition)
-    if condition == UP:
-        state = UP
-    elif condition == DOWN:
-        state = DOWN
+    
+    if    now.eq(UP): state = UP
+    elif  now.eq(UPRIGHT): state = UPRIGHT
+    elif  now.eq(RIGHT): state = RIGHT
+    elif  now.eq(DOWNRIGHT): state = DOWNRIGHT
+    elif  now.eq(DOWN): state = DOWN
+    elif  now.eq(DOWNLEFT): state = DOWNLEFT
+    elif  now.eq(LEFT): state = LEFT
+    elif  now.eq(UPLEFT): state = UPLEFT
+    else: state = CENTER
 
-    print "State %s" % str(state)
-
-
-
-
-
-
+    # print "State %s" % state
+    return state
 
 
 class SampleListener(Leap.Listener):
@@ -129,7 +153,7 @@ class SampleListener(Leap.Listener):
                     avg_pos += finger.tip_position
                 avg_pos /= len(fingers)
                 print "Hand has %d fingers, average finger tip position: x=%.2f, y=%.2f z=%.2f" % ( len(fingers), avg_pos[0],avg_pos[1],avg_pos[2] )
-                print get_state((avg_pos[0],avg_pos[1],avg_pos[2]))
+                print calc_state(avg_pos[0],avg_pos[1],avg_pos[2])
 
 
 
@@ -206,34 +230,24 @@ class SampleListener(Leap.Listener):
             return "STATE_INVALID"
 
 def main():
-    # # Create a sample listener and controller
-    # listener = SampleListener()
-    # controller = Leap.Controller()
+    # Create a sample listener and controller
+    listener = SampleListener()
+    controller = Leap.Controller()
 
-    # # Have the sample listener receive events from the controller
-    # controller.add_listener(listener)
+    # Have the sample listener receive events from the controller
+    controller.add_listener(listener)
 
-    # # Keep this process running until Enter is pressed
-    # print "Press Enter to quit..."
-    # sys.stdin.readline()
+    # Keep this process running until Enter is pressed
+    print "Press Enter to quit..."
+    sys.stdin.readline()
 
-    # # Remove the sample listener when done
-    # controller.remove_listener(listener)
+    # Remove the sample listener when done
+    controller.remove_listener(listener)
 
-    width = NSScreen.mainScreen().frame().size.width
-    height = NSScreen.mainScreen().frame().size.height
-    center = [width,height]
-    print width, height
-    
-    x = -150.0
-    y = 0.0
-
-    get_state((0,0,0))
-    get_state((0,25,0))
-
-
-    # center = [width/2,height/2]
-    # print center
+    # width = NSScreen.mainScreen().frame().size.width
+    # height = NSScreen.mainScreen().frame().size.height
+    # center = [width,height]
+    # print width, height
 
 
 if __name__ == "__main__":
