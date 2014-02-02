@@ -4,36 +4,17 @@ import imp
 from pymouse import PyMouse
 imp.load_source('Leap', 'lib/Leap.py')
 
-################################################################################
-# Copyright (C) 2012-2013 Leap Motion, Inc. All rights reserved.               #
-# Leap Motion proprietary and confidential. Not for distribution.              #
-# Use subject to the terms of the Leap Motion SDK Agreement available at       #
-# https://developer.leapmotion.com/sdk_agreement, or another agreement         #
-# between Leap Motion and you, your company or other organization.             #
-################################################################################
-
 import Leap, sys
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
 import time
 
-from Quartz.CoreGraphics import CGEventCreateMouseEvent
-from Quartz.CoreGraphics import CGEventPost
-from Quartz.CoreGraphics import kCGEventMouseMoved
-from Quartz.CoreGraphics import kCGEventLeftMouseDown
-from Quartz.CoreGraphics import kCGEventLeftMouseDown
-from Quartz.CoreGraphics import kCGEventLeftMouseUp
-from Quartz.CoreGraphics import kCGMouseButtonLeft
-from Quartz.CoreGraphics import kCGHIDEventTap
-from AppKit import NSScreen
 
-#width=1440.0, height=900.0
 
 class State:
     def __init__(self,name, state):
         self.name = name
         self.state = state
     def eq(self, state2):
-        # print "%s %s" % (str(self.state), str(state2.state))
         return self.state == state2.state
     def __str__(self):
         return "%s %s" % (self.name or 'None', str(self.state))
@@ -76,19 +57,21 @@ def mouse_click(type):
     MOUSE.click(x,y,type)
 
 def render(state):
-    if    state.eq(UP): mousemove(0,-SPEED)
-    elif  state.eq(UPRIGHT): mousemove(SPEED,-SPEED)
-    elif  state.eq(RIGHT): mousemove(SPEED,0)
+    """ Converted to default screen layout, where top,left is 0,0 in coordinate plane """
+    if    state.eq(UP):        mousemove(0,-SPEED)
+    elif  state.eq(UPRIGHT):   mousemove(SPEED,-SPEED)
+    elif  state.eq(RIGHT):     mousemove(SPEED,0)
     elif  state.eq(DOWNRIGHT): mousemove(SPEED,SPEED)
-    elif  state.eq(DOWN): mousemove(0,SPEED)
-    elif  state.eq(DOWNLEFT): mousemove(-SPEED,SPEED)
-    elif  state.eq(LEFT): mousemove(-SPEED,0)
-    elif  state.eq(UPLEFT): mousemove(-SPEED,-SPEED)
+    elif  state.eq(DOWN):      mousemove(0,SPEED)
+    elif  state.eq(DOWNLEFT):  mousemove(-SPEED,SPEED)
+    elif  state.eq(LEFT):      mousemove(-SPEED,0)
+    elif  state.eq(UPLEFT):    mousemove(-SPEED,-SPEED)
     else: pass # Center, Do nothing
 
 
 def calc_state(x, y, z):
     
+    # Normalize Xaxis
     if abs(x) < 20:
         x = 0
     elif x < 0:
@@ -96,6 +79,7 @@ def calc_state(x, y, z):
     elif x > 0:
         x = 1
     
+    # Normalize Yaxis
     if 120 < y and y < 140:
         y = 0
     elif y < 120:
@@ -106,17 +90,16 @@ def calc_state(x, y, z):
     now = State(None,(x,y))  
     state = None
     
-    if    now.eq(UP): state = UP
-    elif  now.eq(UPRIGHT): state = UPRIGHT
-    elif  now.eq(RIGHT): state = RIGHT
+    if    now.eq(UP):        state = UP
+    elif  now.eq(UPRIGHT):   state = UPRIGHT
+    elif  now.eq(RIGHT):     state = RIGHT
     elif  now.eq(DOWNRIGHT): state = DOWNRIGHT
-    elif  now.eq(DOWN): state = DOWN
-    elif  now.eq(DOWNLEFT): state = DOWNLEFT
-    elif  now.eq(LEFT): state = LEFT
-    elif  now.eq(UPLEFT): state = UPLEFT
+    elif  now.eq(DOWN):      state = DOWN
+    elif  now.eq(DOWNLEFT):  state = DOWNLEFT
+    elif  now.eq(LEFT):      state = LEFT
+    elif  now.eq(UPLEFT):    state = UPLEFT
     else: state = CENTER
 
-    # print "State %s" % state
     return state
 
 
@@ -160,6 +143,7 @@ class SampleListener(Leap.Listener):
                     avg_pos += finger.tip_position
                 avg_pos /= len(fingers)
                 print "Hand has %d fingers, average finger tip position: x=%.2f, y=%.2f z=%.2f" % ( len(fingers), avg_pos[0],avg_pos[1],avg_pos[2] )
+                
                 render(calc_state(avg_pos[0],avg_pos[1],avg_pos[2]))
 
 
